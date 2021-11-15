@@ -41,8 +41,8 @@ def send_img_text_sticker(message, img_path, text, sticker, reply_markup):
     MypyBot.send_sticker(message.chat.id, open('Stickers/{}.webp'.format(sticker), 'rb'))
     return send
 
-main_img_dir = "C:/Users/Public/Documents/ImageProcessing/Users_images"
-tokens = {"icecream": False, 'source': False, 'negative': False, 'gamma': False, 'gray': False, 'sepia': False, "counters": False}
+main_img_dir = "C:/Users/tramp/source/repos/PythonApplication1/PythonApplication1/photos"
+tokens = {"icecream": False, 'source': False, 'negative': False, 'gamma': False, 'gray': False, 'sepia': False, "counters": False, "color_range": False}
 
 MypyBot = telebot.TeleBot(config.TOKEN, parse_mode = None)
 
@@ -69,8 +69,9 @@ button_negative = types.KeyboardButton("Негатив")
 button_gamma = types.KeyboardButton("Гамма Фильтр")
 button_gray = types.KeyboardButton("Черно-белый")
 button_counters = types.KeyboardButton("Выделить контуры")
+button_color_range = types.KeyboardButton("Цветовой диапазон")
 button_tired = types.KeyboardButton("Устал, перерыв ?")
-Filters.add(button_sourse, button_negative, button_gamma, button_gray, button_counters, button_tired)
+Filters.add(button_sourse, button_negative, button_gamma, button_gray, button_counters, button_color_range, button_tired)
 
 baby_help_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 button_dark = types.KeyboardButton("0.5 Немного затемнить")
@@ -80,7 +81,15 @@ baby_help_markup.add(button_dark, button_light)
 baby_enough_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 baby_enough_markup.add(button_dark, button_light, button_enough)
 
-Remove_buttons = telebot.types.ReplyKeyboardRemove()
+Colors = types.ReplyKeyboardMarkup(resize_keyboard=True)
+button_green = types.KeyboardButton("Зелёный")
+button_red = types.KeyboardButton("Красный")
+button_orange = types.KeyboardButton("Оранжевый")
+button_yellow = types.KeyboardButton("Жёлтый")
+button_lightblue = types.KeyboardButton("Голубой")
+button_blue = types.KeyboardButton("Синий")
+button_purple = types.KeyboardButton("Фиолетовый")
+Colors.add(button_green, button_red, button_yellow, button_orange, button_lightblue, button_blue, button_purple)
 
 @MypyBot.message_handler(content_types = ['text'])
 def StartWork(message):
@@ -102,9 +111,7 @@ def StartWork(message):
         button_No = types.InlineKeyboardButton("Нет", callback_data='no')
         markup_for_answer_two.add(button_Yes, button_No)
         send = send_img_text_sticker(message, None, 'Тебе точно есть 18 ?', "18", markup_for_answer_two)
-        MypyBot.send_message(message.chat.id, "", reply_markup = Remove_buttons) 
         MypyBot.register_next_step_handler(send, handle_docs_photo)
-        # Как удалить кнопки ?
     else:
         send_img_text_sticker(message, None, "Я не знаю что ответить 😢", "noanswer", start_markup)
 
@@ -158,6 +165,12 @@ def LetsGetWork(message):
         else:
             MypyBot.reply_to(message, "Ой, а я не видела твоих фоточек еще, семпай...")
             MypyBot.send_sticker(message.chat.id, open('Stickers/error.webp', 'rb'))
+    elif message.text == 'Цветовой диапазон':
+        if tokens.get('sourse') == True:
+            send = send_img_text_sticker(message, None, "Введи один из цветов радуги, дорогуша","mayi", Colors)
+            MypyBot.register_next_step_handler(send, Color_Range)
+        else:    
+            send_error_to_user(message, "Ой, а я не видела твоих фоточек еще, семпай...")
     elif message.text == 'Гамма Фильтр':
         if tokens.get('sourse') == True:
             if tokens.get('gamma') == False:
@@ -197,6 +210,99 @@ def LetsGetWork(message):
         send = send_img_text_sticker(message, None, "Я не знаю что ответить 😢", "noanswer", start_markup)
         MypyBot.register_next_step_handler(send, StartWork)
 
+def Color_Range(message):
+    try:
+        src_img_path = create_save_path(message, "source")
+        if message.text == 'Зелёный' or message.text == 'зелёный' or message.text == 'зеленый' or message.text == 'Зеленый' or message.text == 'green':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((36, 25, 25), np.uint8)
+            hsv_max = np.array((85, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Красный' or message.text == 'красный' or message.text == 'red':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((0, 25, 25), np.uint8) #COLOURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
+            hsv_max = np.array((15, 255, 255), np.uint8) #COLOURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Оранжевый' or message.text == 'оранжевый' or message.text == 'orange':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((13, 25, 25), np.uint8)
+            hsv_max = np.array((23, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Жёлтый' or message.text == 'жёлтый' or message.text == 'желтый' or message.text == 'Желтый' or message.text == 'yellow':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((20, 25, 25), np.uint8)
+            hsv_max = np.array((40, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Голубой' or message.text == 'голубой' or message.text == 'blue':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((83, 25, 25), np.uint8)
+            hsv_max = np.array((103, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Синий' or message.text == 'синий' or message.text == 'light blue':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((103, 25, 25), np.uint8)
+            hsv_max = np.array((133, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        elif message.text == 'Фиолетовый' or message.text == 'фиолетовый' or message.text == 'purple':
+            img_path = create_save_path(message, "color_range")
+            img = cv2.imread(src_img_path)
+            img = cv2.bilateralFilter(img,9,75,75)
+            hsv_min = np.array((135, 0, 0), np.uint8)
+            hsv_max = np.array((155, 255, 255), np.uint8)
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV )
+            img_hsv = cv2.inRange(hsv, hsv_min, hsv_max)
+            cv2.imwrite(img_path, img_hsv)
+            tokens['color_range'] = True
+            send = send_img_text_sticker(message, img_path, "Ничего себе как я могу", "beautiful", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+        else:
+            send = send_img_text_sticker(message, None, "Сказала же, цвета радуги \n Каждый охотник желает знать..", "kus", Filters)
+            MypyBot.register_next_step_handler(send, LetsGetWork)
+    except Exception as e:
+        send = send_img_text_sticker(message, img_path, "Что-то пошло не так, прости..", "cry", Filters)
+        MypyBot.register_next_step_handler(send, LetsGetWork)
 def Gamma_Function(message):
     flag = 0
     if message.text == '0.5 Немного затемнить':
@@ -253,8 +359,9 @@ def Gamma_Function(message):
 def callback_inline(call):
     try:
         if call.message:
+            send = send_img_text_sticker(call.message, None, "Эта клавиатура тебе больше не нужна, дружочек, пирожочек", "evil", types.ReplyKeyboardRemove())
             if call.data == 'yes':
-                MypyBot.send_message(call.message.chat.id, 'Тогда кинь свою картинку... 😊')
+                MypyBot.send_message(call.message.chat.id, 'Кидай свою картинку...')
                 MypyBot.send_sticker(call.message.chat.id, open('Stickers/giveaphoto.webp', 'rb'))
             elif call.data == 'no':
                 MypyBot.send_message(call.message.chat.id, 'Ну ничего, со всеми бывало, загружай изображение!')
@@ -264,8 +371,8 @@ def callback_inline(call):
             #     MypyBot.send_message(call.message.chat.id, 'Тогда пришли мне его...')
  
             # remove inline buttons
-            MypyBot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Тебе точно есть 18 ?',
-                reply_markup=None)
+            #MypyBot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Тебе точно есть 18 ?',
+            #    reply_markup=None)
             # MypyBot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Придется обрабатывать изображение :(",
             #     reply_markup=None)
  
@@ -299,6 +406,7 @@ def handle_docs_photo(message):
         tokens['gray'] = False
         tokens['sepia'] = False
         tokens['counters'] = False
+        tokens['color_range'] = False
         MypyBot.register_next_step_handler(send, LetsGetWork)
     except Exception as e:
         send = send_error_to_user(message, "У меня не получилось загрузить изображение, ты был слишком резок.. \n Попробуй другое 😟")
