@@ -119,14 +119,15 @@ async def echo_message(message: types.Message):
 
 @dp.message_handler(lambda message: message.text == "🍧 Хочу мороженку", state = StartManagment.ice_crem_not_done)
 async def wanted_icecrem_first_time(message: types.Message):
-    await send_img_text_sticker(message, None, "Упс, я уже все съела", "hehe", None)
+    await send_img_text_sticker(message, "https://sc01.alicdn.com/kf/UTB8CFH3C3QydeJk43PUq6AyQpXah/200128796/UTB8CFH3C3QydeJk43PUq6AyQpXah.jpg",
+                                "Упс, я уже все съела", "hehe", None)
     state = dp.current_state(user = message.from_user.id)
     await state.set_state(StartManagment.ice_crem_done)
 
 @dp.message_handler(lambda message: message.text == "🍧 Хочу мороженку", state = StartManagment.ice_crem_done)
 async def wanted_icecrem_other_time(message: types.Message):
     await send_img_text_sticker(message, "https://tortodelfeo.ru/wa-data/public/shop/products/88/27/2788/images/2648/2648.750.png",
-    "Думаешь что-то изменилось, пупсик ?", "he", None)
+                                "Думаешь что-то изменилось, пупсик ?", "he", None)
 
 @dp.message_handler(lambda message: message.text == "🎨 Мне нужно обработать изображение", state = StartManagment.states)
 async def image_processing(message: types.Message):
@@ -136,6 +137,15 @@ async def image_processing(message: types.Message):
     markup_for_answer.add(button_yes, button_no)
     await send_img_text_sticker(message, None, 'Тебе точно есть 18 ?', "18", markup_for_answer)
     await ImageDownload.download_not_complete.set()
+
+@dp.message_handler(state = ImageDownload.download_not_complete)
+async def echo_message(message: types.Message):
+    markup_for_answer = types.InlineKeyboardMarkup(row_width = 2)
+    button_yes = types.InlineKeyboardButton(text = "Да", callback_data = "years_old_18")
+    button_no = types.InlineKeyboardButton(text = "Нет", callback_data = "years_old_not_18")
+    markup_for_answer.add(button_yes, button_no)
+    await send_img_text_sticker(message, None, "Чего я там не видела, ответь на вопрос, малыш, тебе есть 18 ?",
+                                 "be",markup_for_answer)
 
 @dp.callback_query_handler(text = "years_old_18", state = "*")
 async def send_random_value(call: types.CallbackQuery):
@@ -378,8 +388,8 @@ async def filter_furie(message: types.Message):
 
 @dp.message_handler(lambda message: message.text == "Я устал", state = ImageDownload.download_done)
 async def image_processing(message: types.Message):
-    send_img_text_sticker(message, None, "Бедненький, давай я тебя помогу тебе расслабиться ...", "relax", start_markup)
-    StartManagment.ice_crem_not_done.set()
+    await send_img_text_sticker(message, None, "Бедненький, давай я тебя помогу тебе расслабиться ...", "relax", start_markup)
+    await StartManagment.ice_crem_not_done.set()
 
 @dp.message_handler(commands="block")
 async def cmd_block(message: types.Message):
@@ -407,6 +417,13 @@ async def cmd_answer(message: types.Message):
 @dp.message_handler(commands="reply")
 async def cmd_reply(message: types.Message):
     await message.reply('Это ответ с "ответом"')
+
+@dp.message_handler(state = "*")
+async def echo_message(message: types.Message):
+    await send_img_text_sticker(message, None,
+    f"Я не знаю что ответить 😢\n"
+    f"Доступные команды: \n/start - полная перезагрузка \n/filters - получить клавиатуру фильтров\n"
+    f"/help - информация о достурных фильтрах", "noanswer", start_markup)
 
 if __name__ == "__main__":
     # Запуск бота
