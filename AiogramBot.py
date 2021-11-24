@@ -13,7 +13,7 @@ from requests import get
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 
-main_img_dir = "C:/Users/Public/Documents/ImageProcessing/Users_images"
+main_img_dir = "C:/Users/tramp/source/repos/PythonApplication1/PythonApplication1/photos/"
 
 bot = Bot(token = config.TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -37,7 +37,7 @@ class Filters(StatesGroup):
 tokens = {"negative": False, "gamma": False, "gray": False, "mean_shift": False,
         "color_range": False, "furie": False, "flag": 0}
 
-start_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+start_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard = True)
 start_buttons = ["🍧 Хочу мороженку", "🎨 Мне нужно обработать изображение"]
 start_markup.add(*start_buttons)
 
@@ -106,6 +106,24 @@ async def start_message(message: types.Message):
     await bot.send_sticker(message.chat.id, open('Stickers/hello.webp', 'rb'))
     await StartManagment.ice_crem_not_done.set()
 
+@dp.message_handler(commands = "help", state = "*")
+async def help_message(message: types.Message):
+    me = await bot.get_me()
+    await message.answer(
+    f"Давай-ка я подскажу тебе по поводу фильтров..\n"
+    f"<b>Негатив</b> - самый простой, значения каналов цвета меняются на противоположные\n"
+    f"<b>Гамма-фильтр</b> - чуть посложнее, в зависимости от коэффициента гамма меняется интенсивность(яркость) изображения\
+    посветлее, потемнее, всё такое..\n"
+    f"<b>Чёрно-белый</b> - ну туть всё понятно, находим интенсивность картинки и скалируем ее в оттенках от черного до белого цветов\n"
+    f"<b>Средний сдвиг</b> - скажу по-научному, он заменяет каждый пиксель средним значением пикселей в своей окрестности матрицы радиуса r 🧐\
+    в общем гладит фото\n"
+    f"Ты еще не уснул? Оу, нет.. Ладно тогда продолжим\n"
+    f"<b>Цветовой диапазон</b> - да тут легко, эта штука выделяет диапазон цветов, который ты прикажешь\
+    и на картинке красит его в белый. Преобразовывем картинку в формат HSV (ну ты знаешь),\
+    создаём HSV массивы от минимума нашего оттенка цвета до максимума, ну а дальше всё понятно,\
+    это простейшая реализация, многого от нее не ожидай 🙄\n", parse_mode = types.ParseMode.HTML) #, reply_markup = start_markup
+    await bot.send_sticker(message.chat.id, open('Stickers/stupid.webp', 'rb'))
+
 @dp.message_handler(commands = "filters", state = "*")
 async def get_filters_keyboard(message: types.Message):
     await send_img_text_sticker(message, None, "Ну понятно, лишь бы поработать", "tired", reply_markup = filters_markup)
@@ -120,17 +138,18 @@ async def echo_message(message: types.Message):
 @dp.message_handler(lambda message: message.text == "🍧 Хочу мороженку", state = StartManagment.ice_crem_not_done)
 async def wanted_icecrem_first_time(message: types.Message):
     await send_img_text_sticker(message, "https://sc01.alicdn.com/kf/UTB8CFH3C3QydeJk43PUq6AyQpXah/200128796/UTB8CFH3C3QydeJk43PUq6AyQpXah.jpg",
-                                "Упс, я уже все съела", "hehe", None)
+                                "Упс, я уже все съела", "hehe", start_markup)
     state = dp.current_state(user = message.from_user.id)
     await state.set_state(StartManagment.ice_crem_done)
 
 @dp.message_handler(lambda message: message.text == "🍧 Хочу мороженку", state = StartManagment.ice_crem_done)
 async def wanted_icecrem_other_time(message: types.Message):
     await send_img_text_sticker(message, "https://tortodelfeo.ru/wa-data/public/shop/products/88/27/2788/images/2648/2648.750.png",
-                                "Думаешь что-то изменилось, пупсик ?", "he", None)
+                                "Думаешь что-то изменилось, пупсик ?", "he", start_markup)
 
 @dp.message_handler(lambda message: message.text == "🎨 Мне нужно обработать изображение", state = StartManagment.states)
 async def image_processing(message: types.Message):
+    #await bot.send_message(message.chat.id, message.text, types.ReplyKeyboardRemove())
     markup_for_answer = types.InlineKeyboardMarkup(row_width = 2)
     button_yes = types.InlineKeyboardButton(text = "Да", callback_data = "years_old_18")
     button_no = types.InlineKeyboardButton(text = "Нет", callback_data = "years_old_not_18")
@@ -145,7 +164,7 @@ async def echo_message(message: types.Message):
     button_no = types.InlineKeyboardButton(text = "Нет", callback_data = "years_old_not_18")
     markup_for_answer.add(button_yes, button_no)
     await send_img_text_sticker(message, None, "Чего я там не видела, ответь на вопрос, малыш, тебе есть 18 ?",
-                                 "be",markup_for_answer)
+                                 "be", markup_for_answer)
 
 @dp.callback_query_handler(text = "years_old_18", state = "*")
 async def send_random_value(call: types.CallbackQuery):
