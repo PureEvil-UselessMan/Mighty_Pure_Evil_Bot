@@ -35,7 +35,7 @@ class Filters(StatesGroup):
     gamma_working = State()
 
 tokens = {"negative": False, "gamma": False, "gray": False, "mean_shift": False,
-        "color_range": False, "furie": False, "flag": 0}
+        "color_range": False, "flag": 0}
 
 start_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard = True)
 start_buttons = ["🍧 Хочу мороженку", "🎨 Мне нужно обработать изображение"]
@@ -48,10 +48,9 @@ button_gamma = types.KeyboardButton("Гамма Фильтр")
 button_gray = types.KeyboardButton("Черно-белый")
 button_shift = types.KeyboardButton("Средний сдвиг")
 button_color_range = types.KeyboardButton("Цветовой диапазон")
-button_furie = types.KeyboardButton("Преобразование Фурье")
 button_tired = types.KeyboardButton("Я устал")
 filters_markup.add(button_sourse, button_negative, button_gamma, button_gray,
-                    button_shift, button_color_range, button_furie, button_tired)
+                    button_shift, button_color_range, button_tired)
 
 baby_help_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 button_dark = types.KeyboardButton("0.5 Немного затемнить")
@@ -95,7 +94,6 @@ def create_save_path(message, images_type):
     return src
 
 
-# Хэндлер на команду /test1
 @dp.message_handler(commands = "start", state = "*")
 async def start_message(message: types.Message):
     me = await bot.get_me()
@@ -220,7 +218,6 @@ async def download_photo(message: types.Message):
         tokens["mean_shift"] = False
         tokens["gray"] = False
         tokens["gamma"] = False
-        tokens["furie"] = False
         tokens["color_range"] = False
     except:
         await send_error_to_user(message, "У меня не получилось загрузить изображение, ты был слишком резок.. \n Попробуй другое 😟")
@@ -272,6 +269,7 @@ async def Color_Range(message: types.Message):
         src_img_path = create_save_path(message, "source")
         img_path = create_save_path(message, "color_range")
         img = cv2.imread(src_img_path)
+        img = cv2.bilateralFilter(img,9,75,75)
         if message.text == 'Зелёный' or message.text == 'зелёный' or message.text == 'зеленый' \
                                         or message.text == 'Зеленый' or message.text == 'green':
             hsv_min = np.array((36, 25, 25), np.uint8)
@@ -362,7 +360,7 @@ async def Gamma_Function(message):
                 await send_img_text_sticker(message, None, "Гамма это просто число! Плохой мальчик!", "kus", baby_help_markup)
             if tokens["flag"] == 2:
                 await send_img_text_sticker(message, None, "Издеваешься, да?", "cry", filters_markup)
-            await ImageDownload.download_done.set()
+                await ImageDownload.download_done.set()
         if tokens["flag"] == 0:
             if tokens.get('gamma') == False:
                 src_img_path = create_save_path(message, "source")
@@ -389,22 +387,6 @@ async def filter_meanshift(message: types.Message):
         img_path = create_save_path(message, "mean_shift")
         await send_img_text_sticker(message, img_path, "Ты уже использовал этот фильтр, имей совесть! Я тут не без дела сижу ...", "tired")
 
-@dp.message_handler(lambda message: message.text == "Преобразование Фурье", state = ImageDownload.download_done)
-async def filter_furie(message: types.Message):
-    await send_img_text_sticker(message, None, "Ляпота", "wow", None)
-    if tokens["furie"] == False:
-        src_img_path = create_save_path(message, "source")
-        img_path = create_save_path(message, "furie")
-        img = cv2.imread(src_img_path)
-        f = np.fft.fft2(img)
-        fshift = np.fft.fftshift(f)
-        cv2.imwrite(img_path, fshift)
-        await send_img_text_sticker(message, img_path, "Ляпота", "wow", None)
-        tokens['furie'] = True
-    else:
-        img_path = create_save_path(message, "mean_shift")
-        await send_img_text_sticker(message, img_path, "Я хочу разнообразия, чего одно и тоже делать ?", "dontrush")
-
 @dp.message_handler(lambda message: message.text == "Я устал", state = ImageDownload.download_done)
 async def image_processing(message: types.Message):
     await send_img_text_sticker(message, None, "Бедненький, давай я тебя помогу тебе расслабиться ...", "relax", start_markup)
@@ -429,16 +411,16 @@ async def error_bot_blocked(update: types.Update, exception: BotBlocked):
     # если дальнейшая обработка не требуется.
     return True
 
-@dp.message_handler(commands = "answer")
-async def cmd_answer(message: types.Message):
-    await message.answer("Это простой ответ")
+#@dp.message_handler(commands = "answer")
+#async def cmd_answer(message: types.Message):
+#    await message.answer("Это простой ответ")
 
-@dp.message_handler(commands="reply")
-async def cmd_reply(message: types.Message):
-    await message.reply('Это ответ с "ответом"')
+#@dp.message_handler(commands="reply")
+#async def cmd_reply(message: types.Message):
+#    await message.reply('Это ответ с "ответом"')
 
 @dp.message_handler(state = "*")
-async def echo_message(message: types.Message):
+async def echo_message(message):
     await send_img_text_sticker(message, None,
     f"Я не знаю что ответить 😢\n"
     f"Доступные команды: \n/start - полная перезагрузка \n/filters - получить клавиатуру фильтров\n"
